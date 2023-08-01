@@ -1,0 +1,1 @@
+export const HS256 = "HS256";
