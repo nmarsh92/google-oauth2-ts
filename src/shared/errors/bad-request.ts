@@ -1,4 +1,4 @@
-import { HTTP_STATUS_CODES } from "../shared/constants/http";
+import { HTTP_STATUS_CODES } from "../constants/http";
 import { HttpError } from "./http-error";
 import { ValidationError } from "express-validator"
 

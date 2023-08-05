@@ -1,4 +1,4 @@
-import { HTTP_STATUS_CODES } from "../shared/constants/http";
+import { HTTP_STATUS_CODES } from "../constants/http";
 /**
  * @class HttpError
  * @classdesc An error with an http status code.

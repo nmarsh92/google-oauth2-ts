@@ -27,10 +27,6 @@ interface Auditable {
   isDeleted: boolean;
 }
 
-/**
- * The Mongoose schema for the `Auditable` interface.
- * @type {import('mongoose').Schema}
- */
 const AuditableSchema = new Schema(
   {
     isDeleted: { type: Boolean, default: false }

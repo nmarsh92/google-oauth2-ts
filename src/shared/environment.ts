@@ -1,3 +1,4 @@
+import { AuthClient } from "./authClient";
 import { PRODUCTION } from "./constants/environment";
 import { ArgumentNullError } from "./errors/argument-null-error";
 import { ServerError } from "./errors/server-error";
