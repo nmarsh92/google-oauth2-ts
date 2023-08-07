@@ -1,7 +1,9 @@
+import { JwtPayload } from "jsonwebtoken";
+
 /**
  * Interface representing the payload of an access token.
  */
-export interface TokenPayload {
+export interface TokenPayload extends JwtPayload {
   /**
    * The email associated with the user.
    */
@@ -16,6 +18,11 @@ export interface TokenPayload {
    * The last name of the user.
    */
   lastName: string;
+
+  /**
+   * Client id.
+   */
+  client_id: string;
 }
 
 /**
@@ -24,7 +31,7 @@ export interface TokenPayload {
  */
 export interface RefreshTokenPayload extends TokenPayload {
   /**
-   * The unique identifier of the user.
+   * The unique identifier of the refresh token.
    */
   key: string;
 }

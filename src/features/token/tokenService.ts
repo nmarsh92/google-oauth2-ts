@@ -1,9 +1,17 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { Environment } from "../../shared/environment";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
-import { validateRefreshToken as validateRefreshTokenStore } from "./tokenStore";
+import { addRefreshToken, invalidateRefreshTokenStore, validateRefreshToken as validateRefreshTokenStore } from "./tokenStore";
+import { RefreshTokenPayload, TokenPayload } from "./api/tokenPayload";
+import { getUserById } from "../users/userService";
+import { ensureExists } from "../users/userStore";
+import { ArgumentNullError } from "../../shared/errors/argument-null-error";
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from "bcrypt";
 
-
+const refreshTokenExpiresIn = 864000;
+const accessTokenExpiration = 1800;
+const saltRounds = 10;
 /**
  * Validates and retrieves the payload from the provided access token.
  *
@@ -13,21 +21,21 @@ import { validateRefreshToken as validateRefreshTokenStore } from "./tokenStore"
  * @returns {JwtPayload} The payload from the valid access token.
  * @throws {UnauthorizedError} If the access token is missing, invalid, or validation fails.
  */
-export const validateAndGetAccessToken = (accessToken: string, clientIdRequired: boolean, clientId?: string): JwtPayload => {
+export const validateAndGetAccessTokenPayloadAsync = (accessToken: string, clientIdRequired: boolean, clientId?: string): TokenPayload => {
 
   if (!accessToken) throw new UnauthorizedError("Access token is required.");
   if (clientIdRequired && !clientId) throw new UnauthorizedError("Client id required.");
   const environment = Environment.getInstance();
-  const decoded = jwt.decode(accessToken, { complete: true }) as { payload: JwtPayload } | null;
+  const decoded = jwt.decode(accessToken, { complete: true }) as { payload: TokenPayload } | null;
   if (!decoded || !decoded.payload) throw new UnauthorizedError("Invalid access token.");
-  let verified: JwtPayload | null = null;
+  let verified: TokenPayload | null = null;
   const { payload } = decoded;
 
   if (clientId) {
     // If clientId is provided, verify the token with the specific client secret
-    verified = <JwtPayload>jwt.verify(accessToken, environment.getSecret(clientId), {
+    verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(clientId), {
       subject: payload.sub,
-      audience: environment.audience,
+      audience: environment.audiences,
       issuer: environment.issuer,
     });
 
@@ -35,9 +43,9 @@ export const validateAndGetAccessToken = (accessToken: string, clientIdRequired:
   } else {
     if (!payload.client_id) throw new UnauthorizedError("Invalid access token");
     // If clientId is not provided, just verify the token without specific client secret
-    verified = <JwtPayload>jwt.verify(accessToken, environment.getSecret(payload.client_id), {
+    verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(payload.client_id), {
       subject: payload.sub,
-      audience: environment.audience,
+      audience: environment.audiences,
       issuer: environment.issuer
     });
 
@@ -47,6 +55,34 @@ export const validateAndGetAccessToken = (accessToken: string, clientIdRequired:
   return verified;
 };
 
+
+/**
+ *  Sign a new access token for given user.
+ * @param clientId - ClientId
+ * @param userId - UserId
+ * @param audience - Audience
+ * @returns 
+ */
+export const signAndGetAccessTokenAsync = async (clientId: string, userId: string, audiences: string[]): Promise<string> => {
+  const environment = Environment.getInstance();
+  const secret = environment.getSecret(clientId);
+  if (!audiences) throw new ArgumentNullError("audience");
+
+  const user = await getUserById(userId);
+  const options: SignOptions = {
+    expiresIn: accessTokenExpiration,
+    audience: audiences,
+    subject: userId
+  }
+  const tokenPayload: TokenPayload = {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    client_id: clientId
+  }
+  return jwt.sign(tokenPayload, secret, options);
+}
+
 /**
  * Validates and retrieves the payload from the provided refresh token.
  *
@@ -54,19 +90,71 @@ export const validateAndGetAccessToken = (accessToken: string, clientIdRequired:
  * @returns {Promise<JwtPayload>} The payload from the valid refresh token.
  * @throws {UnauthorizedError} If the refresh token is missing, invalid, or validation fails.
  */
-export const validateAndGetRefreshToken = async (refreshToken: string): Promise<JwtPayload> => {
+export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: string): Promise<TokenPayload> => {
   if (!refreshToken) throw new UnauthorizedError("RefreshToken required.");
   const environment = Environment.getInstance();
-  const decoded = jwt.decode(refreshToken, { complete: true }) as { payload: JwtPayload } | null;
+  const decoded = jwt.decode(refreshToken, { complete: true }) as { payload: TokenPayload } | null;
   if (!decoded || !decoded.payload || !decoded.payload.sub) throw new UnauthorizedError("Invalid refresh token.");
   const { payload } = decoded;
-  const verified = <JwtPayload>jwt.verify(refreshToken, environment.getSecret(payload.client_id), {
+  const verified = <TokenPayload>jwt.verify(refreshToken, environment.getSecret(payload.client_id), {
     subject: payload.sub,
-    audience: environment.audience,
+    audience: environment.audiences,
     issuer: environment.issuer,
   });
 
   if (!verified) throw new UnauthorizedError("Invalid access token.");
   await validateRefreshTokenStore(verified.sub, verified.key)
   return verified;
+}
+
+/**
+ *  Add and return new refresh token.
+ * @param userId 
+ * @param clientId 
+ * @returns 
+ */
+export const addAndGetRefreshToken = async (userId: string, clientId: string): Promise<string> => {
+  if (!userId) throw new ArgumentNullError('id');
+  if (!clientId) throw new ArgumentNullError('clientId');
+  const env = Environment.getInstance();
+  const tokenKey = uuidv4();
+  const user = await getUserById(userId);
+  const options: SignOptions = { expiresIn: refreshTokenExpiresIn, subject: userId, audience: env.audience, issuer: env.issuer };
+  const refreshPayload: RefreshTokenPayload = {
+    key: tokenKey,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    client_id: clientId
+  }
+  const hash = await hashToken(tokenKey);
+
+  await addRefreshToken(userId, new Date(Date.now() + refreshTokenExpiresIn), hash);
+
+  return jwt.sign(refreshPayload, env.getSecret(clientId), options);
+}
+
+/**
+ *  Invalidate a refresh token.
+ * @param userId 
+ * @param tokenKey 
+ */
+export const invalidateRefreshToken = async (userId: string, tokenKey: string) => {
+  if (!userId) throw new ArgumentNullError('id');
+  if (!tokenKey) throw new ArgumentNullError('tokenId');
+  await ensureExists(userId);
+  await invalidateRefreshTokenStore(userId, tokenKey);
+}
+
+
+/**
+ * Generates a hash for the provided token identifier using bcrypt.
+ *
+ * @param {string} tokenIdentifier - The token identifier to be hashed.
+ * @returns {Promise<string>} - The hashed token identifier.
+ * @throws {ArgumentNullError} - When `tokenIdentifier` is empty or not provided.
+ */
+const hashToken = async (tokenIdentifier: string): Promise<string> => {
+  if (!tokenIdentifier) throw new ArgumentNullError("TokenIdentifer");
+  return await bcrypt.hash(tokenIdentifier, saltRounds);
 }

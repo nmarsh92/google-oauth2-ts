@@ -1,4 +1,3 @@
-import { AuthClient } from "./authClient";
 import { PRODUCTION } from "./constants/environment";
 import { ArgumentNullError } from "./errors/argument-null-error";
 import { ServerError } from "./errors/server-error";
@@ -54,19 +53,24 @@ export class Environment {
   public readonly verifiedDomains: Array<string>;
 
   /**
-   * An array of auth clients.
+   * An dictionary of auth clients.
    */
   public readonly clients: Record<string, string> = {};
 
   /**
-   * The audience claim for JWT.
+   *  Allowed audiences.
    */
-  public readonly audience: string;
+  public readonly audiences: string[] = new Array<string>();
 
   /**
    * The issuer claim for JWT.
    */
   public readonly issuer: string;
+
+  /**
+   * Api keys.
+   */
+  public readonly apiKeys: string[];
 
   /**
    * Private constructor to enforce the singleton pattern.
@@ -80,17 +84,17 @@ export class Environment {
     this.db = this.getOrThrow("DB");
     this.googleClientId = this.getOrThrow("GOOGLE_CLIENT_ID");
     this.googleSecret = this.getOrThrow("GOOGLE_CLIENT_SECRET");
-    this.verifiedDomains = this.getOrThrow("VERIFIED_DOMAINS").split(",");
+    this.verifiedDomains = this.getOrThrow("GOOGLE_HD_ALLOWED_DOMAINS").split(",");
     const clientsString = this.getOrThrow("CLIENTS");
     clientsString.split(",").forEach(clientStr => {
       const clientPair = clientStr.split(":");
       if (!clientPair || clientPair.length != 2) throw new Error("Invalid client pair.");
       this.clients[clientPair[0]] = clientPair[1];
     });
-
-    // Read AUDIENCE and ISSUER environment variables and store them
-    this.audience = this.getOrThrow("AUDIENCE");
     this.issuer = this.getOrThrow("ISSUER");
+    this.apiKeys = this.getOrThrow("API_KEYS").split(",");
+    this.audiences = this.getOrThrow("AUDIENCES").split(",");
+
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Router, Express } from "express";
-import { VERSION_1 } from "../constants/api";
 
+const API_VERSION = 1;
 /**
  * Adds routes to the Express application.
  *
@@ -13,7 +13,7 @@ export const UseRoutes = (app: Express, name: string, router: Router) => {
    * The base route for the specified version and name.
    * @type {string}
    */
-  const route = `/api/${VERSION_1}/${name}`;
+  const route = `/api/${API_VERSION}/${name}`;
 
   // Use the provided router for the specified route.
   app.use(route, router);

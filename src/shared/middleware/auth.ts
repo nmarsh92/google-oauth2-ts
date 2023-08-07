@@ -21,7 +21,7 @@ export const isAuthorized = async (req: Request, res: Response, next: NextFuncti
     const payload = ticket.getPayload();
 
 
-    if (payload?.hd !== process.env.VERIFIED_DOMAIN)
+    if (payload?.hd !== process.env.GOOGLE_HD_ALLOWED_DOMAINS)
       throw new UnauthorizedError();
 
     //todo: create or get
