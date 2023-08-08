@@ -1,10 +1,11 @@
 import express, { Router } from "express";
 import { getToken, invalidate, introspect } from "./tokenController";
+import { introspectRequestValidator, invalidateRequestValidator, tokenRequestValidator } from "./tokenValidator";
 
 
-export const name = 'token';
+export const NAME = "token";
 export const router: Router = express.Router();
 
-router.get("/", getToken);
-router.get("/introspect", introspect)
-router.get("/invalidate", invalidate)
+router.post("", tokenRequestValidator, getToken);
+router.post("/introspect", introspectRequestValidator, introspect)
+router.post("/invalidate", invalidateRequestValidator, invalidate)

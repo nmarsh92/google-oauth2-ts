@@ -1,6 +1,6 @@
 import { Router, Express } from "express";
 
-const API_VERSION = 1;
+const API_VERSION = "v1";
 /**
  * Adds routes to the Express application.
  *

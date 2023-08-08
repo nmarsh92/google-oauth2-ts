@@ -18,7 +18,7 @@ export const getToken = withErrorHandler(async (req: Request, res: Response, nex
 
   if (!refreshTokenPayload.key || !refreshTokenPayload.sub || !refreshTokenPayload.aud) throw new UnauthorizedError();
 
-  const access_token = await signAndGetAccessTokenAsync(clientId, refreshTokenPayload.sub, refreshTokenPayload.aud.toString())
+  const access_token = await signAndGetAccessTokenAsync(clientId, refreshTokenPayload.sub)
   await invalidateRefreshToken(refreshTokenPayload.sub, refreshTokenPayload.key);
   const refresh_token = await addAndGetRefreshToken(refreshTokenPayload.sub, clientId);
 

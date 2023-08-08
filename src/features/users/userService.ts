@@ -1,9 +1,7 @@
 import { TokenPayload } from "google-auth-library";
-import { UnauthorizedError } from "../../shared/errors/unauthorized";
 import { ServerError } from "../../shared/errors/server-error";
 import { User, UserModel } from "./models/user"
 import { Activity, UserActivityModel } from "./models/userActivity";
-import { Environment } from "../../shared/environment";
 import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 import { NotFoundError } from "../../shared/errors/not-found";
 import { HydratedDocument } from "mongoose";
@@ -11,16 +9,11 @@ import { HydratedDocument } from "mongoose";
  * Gets an existing user or creates a new user based on the provided Google token payload.
  * @param {TokenPayload} payload - The Google token payload containing user information.
  * @returns {Promise<HydratedDocument<User>>} A promise that resolves with the user document.
- * @throws {ServerError} If the payload is not provided.
- * @throws {UnauthorizedError} If the Google domain (hd) is not verified or the email address is not verified.
+ * @throws {ArgumentNullError} If the payload is not provided.
  */
 export const getOrCreateUser = async (payload?: TokenPayload): Promise<HydratedDocument<User>> => {
-  if (!payload) throw new ServerError(); //todo figure out appropriate error here
+  if (!payload) throw new ArgumentNullError();
 
-  if (!payload.hd || !Environment.getInstance().verifiedDomains.includes(payload.hd))
-    throw new UnauthorizedError();
-  if (!payload.email_verified)
-    throw new UnauthorizedError("Email address is not verified.");
   let user = await UserModel.findOne({ "providers.googleId": payload.sub });
   let activity = Activity.Login;
   if (!user) {

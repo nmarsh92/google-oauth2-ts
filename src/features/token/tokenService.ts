@@ -9,8 +9,8 @@ import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from "bcrypt";
 
-const refreshTokenExpiresIn = 864000;
-const accessTokenExpiration = 1800;
+const refreshTokenExpiresIn = 864000; // 10 days
+const accessTokenExpiration = 1800; // 30 minutes
 const saltRounds = 10;
 /**
  * Validates and retrieves the payload from the provided access token.
@@ -63,15 +63,14 @@ export const validateAndGetAccessTokenPayloadAsync = (accessToken: string, clien
  * @param audience - Audience
  * @returns 
  */
-export const signAndGetAccessTokenAsync = async (clientId: string, userId: string, audiences: string[]): Promise<string> => {
+export const signAndGetAccessTokenAsync = async (clientId: string, userId: string): Promise<string> => {
   const environment = Environment.getInstance();
   const secret = environment.getSecret(clientId);
-  if (!audiences) throw new ArgumentNullError("audience");
 
   const user = await getUserById(userId);
   const options: SignOptions = {
     expiresIn: accessTokenExpiration,
-    audience: audiences,
+    audience: environment.audiences,
     subject: userId
   }
   const tokenPayload: TokenPayload = {
@@ -101,9 +100,8 @@ export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: strin
     audience: environment.audiences,
     issuer: environment.issuer,
   });
-
   if (!verified) throw new UnauthorizedError("Invalid access token.");
-  await validateRefreshTokenStore(verified.sub, verified.key)
+  await validateRefreshTokenStore(verified.sub, verified.key);
   return verified;
 }
 
@@ -119,7 +117,7 @@ export const addAndGetRefreshToken = async (userId: string, clientId: string): P
   const env = Environment.getInstance();
   const tokenKey = uuidv4();
   const user = await getUserById(userId);
-  const options: SignOptions = { expiresIn: refreshTokenExpiresIn, subject: userId, audience: env.audience, issuer: env.issuer };
+  const options: SignOptions = { expiresIn: refreshTokenExpiresIn, subject: userId, audience: env.audiences, issuer: env.issuer };
   const refreshPayload: RefreshTokenPayload = {
     key: tokenKey,
     email: user.email,

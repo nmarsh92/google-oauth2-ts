@@ -6,7 +6,9 @@ import cookieParser from "cookie-parser";
 import { logger } from "./src/shared/logger"
 import { connect } from './src/shared/database/mongoose';
 import { UseRoutes } from './src/shared/helpers/routes';
-import { router as authRoutes, name as authName } from "./src/features/authorization/authRoutes"
+import { router as authRoutes, NAME as authName } from "./src/features/authentication/authRoutes"
+import { router as tokenRoutes, NAME as tokenName } from "./src/features/token/tokenRoutes"
+import { errorHandler } from './src/shared/middleware/errorHandler';
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT;
@@ -24,6 +26,8 @@ try {
     });
   })
   UseRoutes(app, authName, authRoutes);
+  UseRoutes(app, tokenName, tokenRoutes);
+  app.use(errorHandler);
 } catch (error) {
   logger.error(error);
 }

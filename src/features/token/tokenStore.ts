@@ -3,7 +3,7 @@ import { RefreshTokenModel, RefreshToken } from "./models/refreshToken";
 import { HydratedDocument } from "mongoose";
 import { NotFoundError } from "../../shared/errors/not-found";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
-
+import bcrypt from "bcrypt";
 const expiresIn = 864000;
 /**
  * Adds a new refresh token to the database or retrieves an existing one.
@@ -34,10 +34,10 @@ export const addRefreshToken = async (userId: string, expiredAt: Date, tokenHash
  * @param {string} tokenHash - The token key to be invalidated.
  * @throws {ArgumentNullError} - When `userId` or `tokenKey` is empty or not provided.
  */
-export const invalidateRefreshTokenStore = async (userId: string, tokenHash: string) => {
+export const invalidateRefreshTokenStore = async (userId: string, tokenKey: string) => {
   if (!userId) throw new ArgumentNullError('id');
-  if (!tokenHash) throw new ArgumentNullError('tokenId');
-  const token = await getRefreshToken(userId, tokenHash);
+  if (!tokenKey) throw new ArgumentNullError('tokenId');
+  const token = await getRefreshToken(userId, tokenKey);
   token.expiredAt = new Date(Date.now() + (1000 * 60));
   token.save();
 }
@@ -45,20 +45,26 @@ export const invalidateRefreshTokenStore = async (userId: string, tokenHash: str
 /**
  * Validates the refresh token for the given user.
  * @param {string} userId - The ID of the user for whom to validate the refresh token.
- * @param {string} tokenHash - The token key to be validated.
+ * @param {string} tokenKey - The token key to be validated.
  * @returns {Promise<void>} A Promise that resolves when the validation is successful.
  * @throws {ArgumentNullError} If the `userId` or `tokenKey` parameters are null or empty.
  * @throws {NotFoundError} If the user is not found.
  * @throws {UnauthorizedError} If the refresh token is invalid.
  */
-export const validateRefreshToken = async (userId?: string, tokenHash?: string): Promise<void> => {
+export const validateRefreshToken = async (userId?: string, tokenKey?: string): Promise<void> => {
   if (!userId) throw new ArgumentNullError('id');
-  if (!tokenHash) throw new ArgumentNullError('tokenId');
+  if (!tokenKey) throw new ArgumentNullError('tokenKey');
+
   // Get the refresh token document for the user
-  const token = await getRefreshToken(userId, tokenHash);
+  const token = await getRefreshToken(userId, tokenKey);
 
   if (!token)
     throw new UnauthorizedError("Invalid refresh token.");
+
+  if (token.expiredAt.getTime() < Date.now()) {
+    throw new UnauthorizedError("Invalid refresh token.")
+  }
+
 };
 
 /**
@@ -69,10 +75,14 @@ export const validateRefreshToken = async (userId?: string, tokenHash?: string):
  * @throws {ArgumentNullError} - When `userId` is empty or not provided.
  * @throws {NotFoundError} - When the refresh token for the user is not found.
  */
-export const getRefreshToken = async (userId: string, tokenHash: string): Promise<HydratedDocument<RefreshToken>> => {
+export const getRefreshToken = async (userId: string, tokenKey: string): Promise<HydratedDocument<RefreshToken>> => {
   if (!userId) throw new ArgumentNullError('userId');
-  if (!tokenHash) throw new ArgumentNullError("tokenKey");
-  const token = await RefreshTokenModel.findOne({ userId: userId, hashedTokenIdentifier: tokenHash });
+  if (!tokenKey) throw new ArgumentNullError("tokenKey");
+  const tokens = await RefreshTokenModel.find({ userId: userId });
+  const token = await tokens.find(async tkn => {
+    return await bcrypt.compare(tokenKey, tkn.hashedTokenIdentifier);
+  });
+
   if (!token) throw new NotFoundError("No refresh tokens found.");
   return token;
 }
