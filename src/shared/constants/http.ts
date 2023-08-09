@@ -1,23 +1,7 @@
-interface HttpStatusCodes {
-  OK: number;
-  CREATED: number;
-  ACCEPTED: number;
-  NO_CONTENT: number;
-  BAD_REQUEST: number;
-  UNAUTHORIZED: number;
-  FORBIDDEN: number;
-  NOT_FOUND: number;
-  CONFLICT: number;
-  INTERNAL_SERVER_ERROR: number;
-  BAD_GATEWAY: number;
-  SERVICE_UNAVAILABLE: number;
-  GATEWAY_TIMEOUT: number;
-}
-
 /**
  * Http status codes.
  */
-export const HTTP_STATUS_CODES: HttpStatusCodes = {
+export const HTTP_STATUS_CODES = {
   OK: 200,
   CREATED: 201,
   ACCEPTED: 202,
@@ -32,4 +16,4 @@ export const HTTP_STATUS_CODES: HttpStatusCodes = {
   SERVICE_UNAVAILABLE: 503,
   GATEWAY_TIMEOUT: 504,
   // Add more status codes as needed
-};
+} as const;

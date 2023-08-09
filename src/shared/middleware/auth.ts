@@ -1,36 +1,42 @@
-import { OAuth2Client } from "google-auth-library"
 import { UnauthorizedError } from "../errors/unauthorized";
 import { NextFunction, Request, Response } from "express";
+import { Environment } from "../environment";
+import { ArgumentNullError } from "../errors/argument-null-error";
+import BadRequestError from "../errors/bad-request";
 
 export const isAuthorized = async (req: Request, res: Response, next: NextFunction) => {
-  const client = new OAuth2Client(process.env.GOOGLE_OAUTH_CLIENT_ID, process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+
   try {
-    const csrfCookie = req.cookies["csrf_token"];
-    const csrfHeader = req.headers['csrf_token'];
-    if (!csrfCookie) throw new UnauthorizedError("Missing CSRF token.");
-    if (!csrfHeader) throw new UnauthorizedError("Missing CSRF token.");
-    if (csrfCookie !== csrfHeader) throw new UnauthorizedError("Invalid CSRF Token.");
-    if (!req.headers.authorization) throw new UnauthorizedError();
-
-    const ticket = await client.verifyIdToken({
-      idToken: req.headers.authorization,
-      audience: process.env.GOOGLE_OAUTH_CLIENT_ID,
-    });
-
-
-    const payload = ticket.getPayload();
-
-
-    if (payload?.hd !== process.env.GOOGLE_HD_ALLOWED_DOMAINS)
-      throw new UnauthorizedError();
-
-    //todo: create or get
-    //todo: generate access token
-
-
+    const auth = req.headers.authorization;
+    if (!auth) throw new UnauthorizedError();
+    if (auth?.startsWith("Basic") && !interpretBasicAuth(auth)) throw new UnauthorizedError();
     next();
   } catch (error) {
     next(error)
   }
 
+}
+
+/**
+ * 
+ * @param basicAuth 
+ * @returns 
+ */
+const interpretBasicAuth = (basicAuth?: string) => {
+  if (!basicAuth) throw new ArgumentNullError("basicAuth");
+  const credentials = basicAuth.split(" ");
+  if (!credentials) throw new BadRequestError("Missing api key");
+  if (credentials.length != 2) throw new BadRequestError("Invalid authorization header");
+  if (credentials[0] !== "Basic") throw new BadRequestError("Invalid authorization header");
+
+  const apiKey = credentials[1];
+  if (!apiKey) throw new BadRequestError("Missing api key");
+
+  const parts = Buffer.from(apiKey, "base64").toString("utf-8").split(":");
+  if (parts.length != 2) throw new BadRequestError("Invalid api key");
+  const clientId = parts[0];
+  const secret = parts[1];
+  if (!clientId || !secret) throw new BadRequestError("Invalid api key");
+
+  return Environment.getInstance().getSecret(clientId) === secret;
 }

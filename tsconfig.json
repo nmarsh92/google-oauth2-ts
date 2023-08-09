@@ -8,5 +8,6 @@
     "sourceMap": true,
     "strict": true /* Enable all strict type-checking options. */,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
+  },
+  "exclude": ["**/*.spec.ts"]
 }

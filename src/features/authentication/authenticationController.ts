@@ -4,7 +4,7 @@ import { getOrCreateUser } from "../users/userService";
 import { withErrorHandler } from "../../shared/controllerBase";
 import { OAuth2Client } from "google-auth-library";
 import { Environment } from "../../shared/environment";
-import { addAndGetRefreshToken, signAndGetAccessTokenAsync } from "../token/tokenService";
+import { addAndGetRefreshTokenAsync, signAndGetAccessTokenAsync } from "../token/tokenService";
 import BadRequestError from "../../shared/errors/bad-request";
 import { validateAndGetAccessTokenPayloadAsync } from "../token/tokenService";
 import { HTTP_STATUS_CODES } from "../../shared/constants/http";

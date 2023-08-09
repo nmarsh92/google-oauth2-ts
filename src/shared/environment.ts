@@ -67,10 +67,6 @@ export class Environment {
    */
   public readonly issuer: string;
 
-  /**
-   * Api keys.
-   */
-  public readonly apiKeys: string[];
 
   /**
    * Private constructor to enforce the singleton pattern.
@@ -92,7 +88,6 @@ export class Environment {
       this.clients[clientPair[0]] = clientPair[1];
     });
     this.issuer = this.getOrThrow("ISSUER");
-    this.apiKeys = this.getOrThrow("API_KEYS").split(",");
     this.audiences = this.getOrThrow("AUDIENCES").split(",");
 
   }
@@ -120,7 +115,7 @@ export class Environment {
     if (!clientId) throw new ArgumentNullError("clientId");
     const secret = this.clients[clientId];
 
-    if (!secret) throw new ServerError();
+    if (!secret) throw new ServerError(`Client secret not found for client id: ${clientId}`);
     return secret;
   }
 

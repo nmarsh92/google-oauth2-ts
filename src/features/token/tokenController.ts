@@ -3,10 +3,11 @@ import { withErrorHandler } from "../../shared/controllerBase"
 import { Environment } from "../../shared/environment";
 import { HTTP_STATUS_CODES } from "../../shared/constants/http";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
-import { addAndGetRefreshToken, invalidateRefreshToken, signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync } from "./tokenService";
+import { addAndGetRefreshTokenAsync, invalidateRefreshToken, signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync } from "./tokenService";
 import BadRequestError from "../../shared/errors/bad-request";
 import { TokenRequest } from "./api/tokenRequest";
 import { IntrospectRequest } from "./api/introspectRequest";
+import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 
 /**
  * Token endpoint to exchange refresh token for access token.
@@ -20,7 +21,7 @@ export const getToken = withErrorHandler(async (req: Request, res: Response, nex
 
   const access_token = await signAndGetAccessTokenAsync(clientId, refreshTokenPayload.sub)
   await invalidateRefreshToken(refreshTokenPayload.sub, refreshTokenPayload.key);
-  const refresh_token = await addAndGetRefreshToken(refreshTokenPayload.sub, clientId);
+  const refresh_token = await addAndGetRefreshTokenAsync(refreshTokenPayload.sub, clientId);
 
   res.status(HTTP_STATUS_CODES.CREATED).json({ access_token, refresh_token });
 });
@@ -42,13 +43,7 @@ export const invalidate = withErrorHandler(async (req: Request, res: Response, n
  * Introspect endpoint to determine access token validity.
  */
 export const introspect = withErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const request: IntrospectRequest = req.body; //todo validation
-  const basicAuth = req.headers.authorization;
-  const environment = Environment.getInstance();
-  if (!request.token) throw new BadRequestError("Missing token");
-  if (!basicAuth) throw new UnauthorizedError();
-  const apiKey = basicAuth.split(" ")[1];
-  if (!environment.apiKeys.includes(apiKey)) throw new UnauthorizedError();
+  const request: IntrospectRequest = req.body;
   const verified = await validateAndGetAccessTokenPayloadAsync(request.token, false);
 
   res.status(HTTP_STATUS_CODES.OK).json({

@@ -1,5 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
-import { addAndGetRefreshToken, signAndGetAccessTokenAsync } from "../token/tokenService";
+import { addAndGetRefreshTokenAsync, signAndGetAccessTokenAsync } from "../token/tokenService";
 import { getOrCreateUser } from "../users/userService";
 import { TokenResponse } from "../token/api/tokenResponse";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
@@ -27,7 +27,7 @@ export const loginWithGoogle = async (credential: string, clientId: string): Pro
   const user = await getOrCreateUser(ticketPayload);
 
   const access_token = await signAndGetAccessTokenAsync(clientId, user.id); // Expires in 30 minutes
-  const refresh_token = await addAndGetRefreshToken(user.id, clientId); // Expires in 10 days
+  const refresh_token = await addAndGetRefreshTokenAsync(user.id, clientId); // Expires in 10 days
 
   return { access_token, refresh_token };
 }

@@ -12,6 +12,7 @@ import bcrypt from "bcrypt";
 const refreshTokenExpiresIn = 864000; // 10 days
 const accessTokenExpiration = 1800; // 30 minutes
 const saltRounds = 10;
+const invalidMessage = "Invalid access token.";
 /**
  * Validates and retrieves the payload from the provided access token.
  *
@@ -22,36 +23,44 @@ const saltRounds = 10;
  * @throws {UnauthorizedError} If the access token is missing, invalid, or validation fails.
  */
 export const validateAndGetAccessTokenPayloadAsync = (accessToken: string, clientIdRequired: boolean, clientId?: string): TokenPayload => {
-
   if (!accessToken) throw new UnauthorizedError("Access token is required.");
   if (clientIdRequired && !clientId) throw new UnauthorizedError("Client id required.");
   const environment = Environment.getInstance();
   const decoded = jwt.decode(accessToken, { complete: true }) as { payload: TokenPayload } | null;
-  if (!decoded || !decoded.payload) throw new UnauthorizedError("Invalid access token.");
+  if (!decoded || !decoded.payload) throw new UnauthorizedError(invalidMessage);
+
   let verified: TokenPayload | null = null;
   const { payload } = decoded;
 
   if (clientId) {
-    // If clientId is provided, verify the token with the specific client secret
-    verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(clientId), {
-      subject: payload.sub,
-      audience: environment.audiences,
-      issuer: environment.issuer,
-    });
+    try {
+      // If clientId is provided, verify the token with the specific client secret
+      verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(clientId), {
+        subject: payload.sub,
+        audience: environment.audiences,
+        issuer: environment.issuer,
+      });
+    } catch {
+      throw new UnauthorizedError(invalidMessage);
+    }
 
-    if (!verified) throw new UnauthorizedError("Invalid access token.");
+
+    if (!verified) throw new UnauthorizedError(invalidMessage);
   } else {
-    if (!payload.client_id) throw new UnauthorizedError("Invalid access token");
+    if (!payload.client_id) throw new UnauthorizedError(invalidMessage);
     // If clientId is not provided, just verify the token without specific client secret
-    verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(payload.client_id), {
-      subject: payload.sub,
-      audience: environment.audiences,
-      issuer: environment.issuer
-    });
 
-
+    try {
+      verified = <TokenPayload>jwt.verify(accessToken, environment.getSecret(payload.client_id), {
+        subject: payload.sub,
+        audience: environment.audiences,
+        issuer: environment.issuer
+      });
+    } catch {
+      throw new UnauthorizedError(invalidMessage);
+    }
   }
-  if (!verified) throw new UnauthorizedError("Invalid access token.");
+  if (!verified) throw new UnauthorizedError(invalidMessage);
   return verified;
 };
 
@@ -71,7 +80,8 @@ export const signAndGetAccessTokenAsync = async (clientId: string, userId: strin
   const options: SignOptions = {
     expiresIn: accessTokenExpiration,
     audience: environment.audiences,
-    subject: userId
+    subject: userId,
+    issuer: environment.issuer
   }
   const tokenPayload: TokenPayload = {
     firstName: user.firstName,
@@ -95,14 +105,18 @@ export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: strin
   const decoded = jwt.decode(refreshToken, { complete: true }) as { payload: TokenPayload } | null;
   if (!decoded || !decoded.payload || !decoded.payload.sub) throw new UnauthorizedError("Invalid refresh token.");
   const { payload } = decoded;
-  const verified = <TokenPayload>jwt.verify(refreshToken, environment.getSecret(payload.client_id), {
-    subject: payload.sub,
-    audience: environment.audiences,
-    issuer: environment.issuer,
-  });
-  if (!verified) throw new UnauthorizedError("Invalid access token.");
-  await validateRefreshTokenStore(verified.sub, verified.key);
-  return verified;
+  try {
+    const verified = <TokenPayload>jwt.verify(refreshToken, environment.getSecret(payload.client_id), {
+      subject: payload.sub,
+      audience: environment.audiences,
+      issuer: environment.issuer,
+    });
+    if (!verified) throw new UnauthorizedError(invalidMessage);
+    await validateRefreshTokenStore(verified.sub, verified.key);
+    return verified;
+  } catch {
+    throw new UnauthorizedError("Invalid refresh token.")
+  }
 }
 
 /**
@@ -111,7 +125,7 @@ export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: strin
  * @param clientId 
  * @returns 
  */
-export const addAndGetRefreshToken = async (userId: string, clientId: string): Promise<string> => {
+export const addAndGetRefreshTokenAsync = async (userId: string, clientId: string): Promise<string> => {
   if (!userId) throw new ArgumentNullError('id');
   if (!clientId) throw new ArgumentNullError('clientId');
   const env = Environment.getInstance();
@@ -152,7 +166,7 @@ export const invalidateRefreshToken = async (userId: string, tokenKey: string) =
  * @returns {Promise<string>} - The hashed token identifier.
  * @throws {ArgumentNullError} - When `tokenIdentifier` is empty or not provided.
  */
-const hashToken = async (tokenIdentifier: string): Promise<string> => {
+export const hashToken = async (tokenIdentifier: string): Promise<string> => {
   if (!tokenIdentifier) throw new ArgumentNullError("TokenIdentifer");
   return await bcrypt.hash(tokenIdentifier, saltRounds);
 }
