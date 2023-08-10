@@ -1,9 +1,7 @@
 import * as tokenStore from "../tokenStore";
 import { hashToken } from "../tokenService";
-import { RefreshToken, RefreshTokenModel } from "../models/refreshToken";
 import bcrypt from "bcrypt";
-import e from "express";
-import { HydratedDocument } from "mongoose";
+import { RefreshTokenModel } from "../dataAccess/refreshToken";
 
 describe("tokenStore", () => {
   const expiredAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);

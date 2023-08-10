@@ -1,27 +1,23 @@
 import { NextFunction, Response, Request } from "express"
 import { withErrorHandler } from "../../shared/controllerBase"
-import { Environment } from "../../shared/environment";
 import { HTTP_STATUS_CODES } from "../../shared/constants/http";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
 import { addAndGetRefreshTokenAsync, invalidateRefreshToken, signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync } from "./tokenService";
-import BadRequestError from "../../shared/errors/bad-request";
 import { TokenRequest } from "./api/tokenRequest";
 import { IntrospectRequest } from "./api/introspectRequest";
-import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 
 /**
  * Token endpoint to exchange refresh token for access token.
  */
 export const getToken = withErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
   const tokenRequest: TokenRequest = req.body; //todo validation
-  const clientId: string = req.body.clientId;
   const refreshTokenPayload = await validateAndGetRefreshTokenPayloadAsync(tokenRequest.refresh_token);
 
   if (!refreshTokenPayload.key || !refreshTokenPayload.sub || !refreshTokenPayload.aud) throw new UnauthorizedError();
 
-  const access_token = await signAndGetAccessTokenAsync(clientId, refreshTokenPayload.sub)
+  const access_token = await signAndGetAccessTokenAsync(tokenRequest.client_id, refreshTokenPayload.sub)
   await invalidateRefreshToken(refreshTokenPayload.sub, refreshTokenPayload.key);
-  const refresh_token = await addAndGetRefreshTokenAsync(refreshTokenPayload.sub, clientId);
+  const refresh_token = await addAndGetRefreshTokenAsync(refreshTokenPayload.sub, tokenRequest.client_id);
 
   res.status(HTTP_STATUS_CODES.CREATED).json({ access_token, refresh_token });
 });

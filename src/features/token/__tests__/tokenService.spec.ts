@@ -1,14 +1,11 @@
 import { Environment } from "../../../shared/environment";
-import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken, invalidateRefreshToken } from "../tokenService";
+import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken } from "../tokenService";
 import * as userService from "../../users/userService";
 import * as tokenStore from "../tokenStore";
 import * as dotenv from 'dotenv';
-import { User } from "../../users/models/user";
-import { RefreshToken } from "../models/refreshToken";
-import { HydratedDocument, Types, ObjectId } from "mongoose";
-import { mock } from "node:test";
+import { User } from "../../users/domain/user";
+import { RefreshToken } from "../domain/refreshToken";
 import bcrypt from "bcrypt";
-import exp from "node:constants";
 dotenv.config();
 describe("Token Service", () => {
   let mockUser: User;

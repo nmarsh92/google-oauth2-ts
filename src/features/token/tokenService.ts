@@ -9,8 +9,10 @@ import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from "bcrypt";
 
-const refreshTokenExpiresIn = 864000; // 10 days
-const accessTokenExpiration = 1800; // 30 minutes
+//10 days in milliseconds
+const refreshTokenExpiresIn = 1000 * 60 * 60 * 24 * 10;
+//30 minutes in milliseconds
+const accessTokenExpiration = 1000 * 60 * 30;
 const saltRounds = 10;
 const invalidMessage = "Invalid access token.";
 /**
@@ -103,6 +105,7 @@ export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: strin
   if (!refreshToken) throw new UnauthorizedError("RefreshToken required.");
   const environment = Environment.getInstance();
   const decoded = jwt.decode(refreshToken, { complete: true }) as { payload: TokenPayload } | null;
+
   if (!decoded || !decoded.payload || !decoded.payload.sub) throw new UnauthorizedError("Invalid refresh token.");
   const { payload } = decoded;
   try {
@@ -114,7 +117,7 @@ export const validateAndGetRefreshTokenPayloadAsync = async (refreshToken: strin
     if (!verified) throw new UnauthorizedError(invalidMessage);
     await validateRefreshTokenStore(verified.sub, verified.key);
     return verified;
-  } catch {
+  } catch (err) {
     throw new UnauthorizedError("Invalid refresh token.")
   }
 }
@@ -141,7 +144,7 @@ export const addAndGetRefreshTokenAsync = async (userId: string, clientId: strin
   }
   const hash = await hashToken(tokenKey);
 
-  await addRefreshToken(userId, new Date(Date.now() + refreshTokenExpiresIn), hash);
+  await addRefreshToken(userId, Date.now() + refreshTokenExpiresIn, hash);
 
   return jwt.sign(refreshPayload, env.getSecret(clientId), options);
 }

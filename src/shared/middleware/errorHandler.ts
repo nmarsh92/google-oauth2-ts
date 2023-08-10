@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from "../errors/http-error";
 import BadRequestError from "../errors/bad-request";
+import { logger } from '../logger';
 /**
  * Error handling middleware for HttpErrors.
  * @param {Error} error 
@@ -11,7 +12,8 @@ import BadRequestError from "../errors/bad-request";
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandler = (error: Error, _: Request, res: Response, next: NextFunction) => {
-  console.error(error);
+  logger.error(error);
+
   if (error instanceof BadRequestError) {
     res.status(error.statusCode).json({ ...error });
     return;

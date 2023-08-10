@@ -1,7 +1,7 @@
 import { Schema, model, Types } from 'mongoose';
-import { Auditable, AuditableSchema } from '../../../shared/models/auditable';
+import { Auditable, AuditableSchema } from '../../../shared/domain/auditable';
 import { User } from './user';
-import { HasId } from '../../../shared/models/hasId';
+import { HasId } from '../../../shared/domain/hasId';
 import { USER_SCHEMA, USER_ACTIVITY_SCHEMA } from '../constants/schemas';
 /**
  *  Actvity.

@@ -1,10 +1,10 @@
 import { ArgumentNullError } from "../../shared/errors/argument-null-error";
-import { RefreshTokenModel, RefreshToken } from "./models/refreshToken";
+import { RefreshToken } from "./domain/refreshToken";
 import { HydratedDocument } from "mongoose";
 import { NotFoundError } from "../../shared/errors/not-found";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
 import bcrypt from "bcrypt";
-const expiresIn = 864000;
+import { RefreshTokenModel } from "./dataAccess/refreshToken";
 /**
  * Adds a new refresh token to the database or retrieves an existing one.
  *
@@ -14,14 +14,14 @@ const expiresIn = 864000;
  * @throws {ArgumentNullError} - When `userId` is empty or not provided.
  * @throws {NotFoundError} - When `create` is false and the refresh token doesn't exist.
  */
-export const addRefreshToken = async (userId: string, expiredAt: Date, tokenHash: string): Promise<void> => {
+export const addRefreshToken = async (userId: string, expiredAt: number, tokenHash: string): Promise<void> => {
   if (!userId) throw new ArgumentNullError('id');
   if (!expiredAt) throw new ArgumentNullError('clientId');
   if (!tokenHash) throw new ArgumentNullError("tokenHash")
   const refreshToken = await RefreshTokenModel.create({
     userId: userId,
     hashedTokenIdentifier: tokenHash,
-    expiredAt: new Date(Date.now() + expiresIn)
+    expiredAt
   });
 
   await refreshToken.save();
@@ -62,6 +62,7 @@ export const validateRefreshToken = async (userId?: string, tokenKey?: string): 
     throw new UnauthorizedError("Invalid refresh token.");
 
   if (token.expiredAt.getTime() < Date.now()) {
+    console.log(token.expiredAt.getTime() < Date.now())
     throw new UnauthorizedError("Invalid refresh token.")
   }
 
@@ -79,8 +80,8 @@ export const getRefreshToken = async (userId: string, tokenKey: string): Promise
   if (!userId) throw new ArgumentNullError('userId');
   if (!tokenKey) throw new ArgumentNullError("tokenKey");
   const tokens = await RefreshTokenModel.find({ userId: userId });
-  const token = await tokens.find(async tkn => {
-    return await bcrypt.compare(tokenKey, tkn.hashedTokenIdentifier);
+  const token = tokens.find(tkn => {
+    return bcrypt.compareSync(tokenKey, tkn.hashedTokenIdentifier);
   });
 
   if (!token) throw new NotFoundError("No refresh tokens found.");
