@@ -1,6 +1,7 @@
 import { Environment } from "../../../shared/environment";
-import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken } from "../tokenService";
+import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken, invalidateRefreshToken, invalidateAllRefreshTokens } from "../tokenService";
 import * as userService from "../../users/userService";
+import * as userStore from "../../users/userStore";
 import * as tokenStore from "../tokenStore";
 import * as dotenv from 'dotenv';
 import { User } from "../../users/domain/user";
@@ -43,8 +44,11 @@ describe("Token Service", () => {
 
 
     jest.spyOn(userService, "getUserById").mockResolvedValue(mockUser);
+    jest.spyOn(userStore, "ensureExists").mockResolvedValue();
     jest.spyOn(tokenStore, "addRefreshToken").mockResolvedValue();
     jest.spyOn(tokenStore, "validateRefreshToken").mockResolvedValue();
+    jest.spyOn(tokenStore, "invalidateRefreshTokenStore").mockResolvedValue();
+    jest.spyOn(tokenStore, "invalidateAllRefreshTokensStore").mockResolvedValue();
   });
 
   test("signAndGetAccessTokenAsync returns a token", async () => {
@@ -134,5 +138,17 @@ describe("Token Service", () => {
     expect(bcrypt.compareSync(token2, hashedToken2)).toBe(true);
     expect(bcrypt.compareSync(token1, hashedToken2)).toBe(false);
     expect(bcrypt.compareSync(token2, hashedToken1)).toBe(false);
+  });
+
+  test("invalidateRefreshToken to call tokenStore", async () => {
+    const tokenKey = "test";
+    await invalidateRefreshToken(mockUser.id, tokenKey);
+    expect(tokenStore.invalidateRefreshTokenStore).toBeCalledWith(mockUser.id, tokenKey);
+  });
+
+  test("invalidateAllRefreshTokens to call tokenStore", async () => {
+
+    await invalidateAllRefreshTokens(mockUser.id);
+    expect(tokenStore.invalidateAllRefreshTokensStore).toBeCalledWith(mockUser.id);
   });
 });

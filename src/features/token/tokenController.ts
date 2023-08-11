@@ -2,9 +2,11 @@ import { NextFunction, Response, Request } from "express"
 import { withErrorHandler } from "../../shared/controllerBase"
 import { HTTP_STATUS_CODES } from "../../shared/constants/http";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
-import { addAndGetRefreshTokenAsync, invalidateRefreshToken, signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync } from "./tokenService";
+import { addAndGetRefreshTokenAsync, invalidateAllRefreshTokens, invalidateRefreshToken, signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync } from "./tokenService";
 import { TokenRequest } from "./api/tokenRequest";
 import { IntrospectRequest } from "./api/introspectRequest";
+import { InvalidateAllRequest } from "./api/invalidateAllRequest";
+import { InvalidateRequest } from "./api/invalidateRequest";
 
 /**
  * Token endpoint to exchange refresh token for access token.
@@ -26,12 +28,23 @@ export const getToken = withErrorHandler(async (req: Request, res: Response, nex
  * Invalidate refresh token.
  */
 export const invalidate = withErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const tokenRequest: TokenRequest = req.body; //todo validation
+  const tokenRequest: InvalidateRequest = req.body;
   const refreshTokenPayload = await validateAndGetRefreshTokenPayloadAsync(tokenRequest.refresh_token);
   if (!refreshTokenPayload.sub) throw new UnauthorizedError();
 
   await invalidateRefreshToken(refreshTokenPayload.sub, refreshTokenPayload.key);
 
+  res.status(HTTP_STATUS_CODES.NO_CONTENT).json();
+});
+
+/**
+ * Invalidate all refresh tokens.
+ */
+export const invalidateAll = withErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const request: InvalidateAllRequest = req.body;
+  const verified = await validateAndGetAccessTokenPayloadAsync(request.access_token, false);
+  if (!verified?.sub) throw new UnauthorizedError();
+  await invalidateAllRefreshTokens(verified.sub);
   res.status(HTTP_STATUS_CODES.NO_CONTENT).json();
 });
 

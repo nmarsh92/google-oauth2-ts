@@ -5,6 +5,7 @@ export interface InvalidateRequest {
 
   /** 
    * Refresh token.
+   * 
    * */
   refresh_token: string;
 

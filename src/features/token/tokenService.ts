@@ -1,7 +1,7 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Environment } from "../../shared/environment";
 import { UnauthorizedError } from "../../shared/errors/unauthorized";
-import { addRefreshToken, invalidateRefreshTokenStore, validateRefreshToken as validateRefreshTokenStore } from "./tokenStore";
+import { addRefreshToken, invalidateAllRefreshTokensStore, invalidateRefreshTokenStore, validateRefreshToken as validateRefreshTokenStore } from "./tokenStore";
 import { RefreshTokenPayload, TokenPayload } from "./api/tokenPayload";
 import { getUserById } from "../users/userService";
 import { ensureExists } from "../users/userStore";
@@ -159,6 +159,18 @@ export const invalidateRefreshToken = async (userId: string, tokenKey: string) =
   if (!tokenKey) throw new ArgumentNullError('tokenId');
   await ensureExists(userId);
   await invalidateRefreshTokenStore(userId, tokenKey);
+}
+
+/**
+ * Invalidate all refresh tokens.
+ * @param userId 
+ * @throws {ArgumentNullError} - When `userId` is empty or not provided.
+ * @throws {NotFoundError} - When the user is not found.
+ */
+export const invalidateAllRefreshTokens = async (userId: string) => {
+  if (!userId) throw new ArgumentNullError('id');
+  await ensureExists(userId);
+  await invalidateAllRefreshTokensStore(userId);
 }
 
 

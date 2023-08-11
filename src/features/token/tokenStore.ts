@@ -43,6 +43,21 @@ export const invalidateRefreshTokenStore = async (userId: string, tokenKey: stri
 }
 
 /**
+ * Invalidates all refresh tokens for a user.
+ * @param {string} userId - The ID of the user for whom to invalidate all refresh tokens.
+ * @throws {ArgumentNullError} - When `userId` is empty or not provided.
+ * @throws {NotFoundError} - When the user is not found.
+ */
+export const invalidateAllRefreshTokensStore = async (userId: string) => {
+  if (!userId) throw new ArgumentNullError('id');
+  const tokens = await RefreshTokenModel.find({ userId: userId });
+  tokens.forEach(token => {
+    token.expiredAt = new Date(Date.now());
+    token.save();
+  });
+
+}
+/**
  * Validates the refresh token for the given user.
  * @param {string} userId - The ID of the user for whom to validate the refresh token.
  * @param {string} tokenKey - The token key to be validated.
