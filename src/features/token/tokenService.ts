@@ -8,11 +8,8 @@ import { ensureExists } from "../users/userStore";
 import { ArgumentNullError } from "../../shared/errors/argument-null-error";
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from "bcrypt";
+import { env } from "process";
 
-//10 days in milliseconds
-const refreshTokenExpiresIn = 1000 * 60 * 60 * 24 * 10;
-//30 minutes in milliseconds
-const accessTokenExpiration = 1000 * 60 * 30;
 const saltRounds = 10;
 const invalidMessage = "Invalid access token.";
 /**
@@ -80,7 +77,7 @@ export const signAndGetAccessTokenAsync = async (clientId: string, userId: strin
 
   const user = await getUserById(userId);
   const options: SignOptions = {
-    expiresIn: accessTokenExpiration,
+    expiresIn: environment.accessTokenExpiresInMs,
     audience: environment.audiences,
     subject: userId,
     issuer: environment.issuer
@@ -89,7 +86,8 @@ export const signAndGetAccessTokenAsync = async (clientId: string, userId: strin
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    client_id: clientId
+    client_id: clientId,
+    iat: Date.now(),
   }
   return jwt.sign(tokenPayload, secret, options);
 }
@@ -134,17 +132,18 @@ export const addAndGetRefreshTokenAsync = async (userId: string, clientId: strin
   const env = Environment.getInstance();
   const tokenKey = uuidv4();
   const user = await getUserById(userId);
-  const options: SignOptions = { expiresIn: refreshTokenExpiresIn, subject: userId, audience: env.audiences, issuer: env.issuer };
+  const options: SignOptions = { expiresIn: env.refreshTokenExpiresInMs, subject: userId, audience: env.audiences, issuer: env.issuer };
   const refreshPayload: RefreshTokenPayload = {
     key: tokenKey,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    client_id: clientId
+    client_id: clientId,
+    iat: Date.now(),
   }
   const hash = await hashToken(tokenKey);
 
-  await addRefreshToken(userId, Date.now() + refreshTokenExpiresIn, hash);
+  await addRefreshToken(userId, Date.now() + env.refreshTokenExpiresInMs, hash);
 
   return jwt.sign(refreshPayload, env.getSecret(clientId), options);
 }

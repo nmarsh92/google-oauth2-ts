@@ -57,6 +57,18 @@ export class Environment {
    */
   public readonly issuer: string;
 
+  /**
+   * The number of minutes before an access token expires.
+   * Defaults to 30 minutes if not provided.
+   */
+  public readonly accessTokenExpiresInMs: number = 1000 * 60 * 30;
+
+  /**
+   * The number of days before a refresh token expires.
+   * Defaults to 10 days if not provided.
+   */
+  public readonly refreshTokenExpiresInMs: number = 1000 * 60 * 60 * 24 * 10;
+
 
   /**
    * Private constructor to enforce the singleton pattern.
@@ -77,6 +89,14 @@ export class Environment {
     });
     this.issuer = this.getOrThrow("ISSUER");
     this.audiences = this.getOrThrow("AUDIENCES").split(",");
+
+    const optionalAccessTokenExpiresInMinutes = this.getOptional("ACCESS_TOKEN_EXPIRATION_MINUTES");
+    const optionalRefreshTokenExpiresInDays = this.getOptional("REFRESH_TOKEN_EXPIRATION_DAYS");
+    if (optionalAccessTokenExpiresInMinutes)
+      this.accessTokenExpiresInMs = parseInt(optionalAccessTokenExpiresInMinutes) * 60 * 1000;
+
+    if (optionalRefreshTokenExpiresInDays)
+      this.refreshTokenExpiresInMs = parseInt(optionalRefreshTokenExpiresInDays) * 24 * 60 * 60 * 1000;
 
   }
 
@@ -118,6 +138,18 @@ export class Environment {
     if (!key) throw new Error(`Missing required environment key`);
     const value: string = process.env[key] || "";
     if (!value) throw new Error(`Missing required environment variable(${key})`);
+    return value;
+  }
+
+  /**
+   *  Helper function to get the value of an environment variable.
+   * @param key 
+   * @returns 
+   */
+  private getOptional(key?: string): string | undefined {
+    if (!key) return undefined;
+    const value: string = process.env[key] || "";
+    if (!value) return undefined;
     return value;
   }
 }
