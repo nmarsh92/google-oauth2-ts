@@ -3,6 +3,7 @@ import { User } from './user';
 import { HasId } from '../../../shared/domain/hasId';
 import { USER_SCHEMA, USER_ACTIVITY_SCHEMA } from '../constants/schemas';
 import { AuditableSchema } from '../../../shared/dataAccess/auditable';
+import { Auditable } from '../../../shared/domain/auditable';
 /**
  *  Actvity.
  */
