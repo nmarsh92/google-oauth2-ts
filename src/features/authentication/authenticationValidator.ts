@@ -27,6 +27,5 @@ export const authenticationValidator = validate(checkSchema({
       errorMessage: "Missing or invalid clientId.",
       bail: true,
     },
-
   }
 }))

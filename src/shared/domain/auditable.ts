@@ -1,4 +1,3 @@
-import { Schema } from 'mongoose';
 
 /**
  * Audit properties for an entity.
@@ -27,12 +26,5 @@ interface Auditable {
   isDeleted: boolean;
 }
 
-const AuditableSchema = new Schema(
-  {
-    isDeleted: { type: Boolean, default: false }
-  },
-  { optimisticConcurrency: true, timestamps: true }
-);
-
-export { Auditable, AuditableSchema };
+export { Auditable };
 

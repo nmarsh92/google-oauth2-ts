@@ -9,6 +9,7 @@ import { UseRoutes } from './src/shared/helpers/routes';
 import { router as authRoutes, NAME as authName } from "./src/features/authentication/authRoutes"
 import { router as tokenRoutes, NAME as tokenName } from "./src/features/token/tokenRoutes"
 import { errorHandler } from './src/shared/middleware/errorHandler';
+import { checkCsrf } from './src/shared/middleware/csrf';
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT;
@@ -25,6 +26,7 @@ try {
       logger.info(`⚡️[server]: Server is running at http://localhost:${port}`);
     });
   })
+  app.use(checkCsrf);
   UseRoutes(app, authName, authRoutes);
   UseRoutes(app, tokenName, tokenRoutes);
   app.use(errorHandler);

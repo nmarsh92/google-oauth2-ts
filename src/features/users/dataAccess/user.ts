@@ -1,7 +1,7 @@
 import { Schema, Types, model } from "mongoose";
-import { AuditableSchema } from "../../../shared/domain/auditable";
 import { USER_SCHEMA } from "../constants/schemas";
 import { User } from "../domain/user";
+import { AuditableSchema } from "../../../shared/dataAccess/auditable";
 
 /**
  * The Mongoose schema for the user entity.
@@ -17,6 +17,8 @@ const UserSchema = new Schema<User>({
 
 // Add the audit fields to the schema
 UserSchema.add(AuditableSchema);
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ "providers.googleId": "text" }, { unique: true });
 
 /**
  * The Mongoose model for the user entity.
