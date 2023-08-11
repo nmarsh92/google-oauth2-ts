@@ -5,6 +5,16 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+env:
+  NODE_ENV: ${{vars.ENV}}}
+  PORT: ${{vars.PORT}}}
+  DB: ${{secrets.DB}}}
+  GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}}
+  GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}}
+  GOOGLE_HD_ALLOWED_DOMAINS: ${{secrets.GOOGLE_HD_ALLOWED_DOMAINS}}}
+  CLIENTS: ${{secrets.CLIENTS}}}
+  AUDIENCES: ${{vars.AUDIENCES}}}
+  ISSUER: ${{vars.ISSUER}}}
 
 jobs:
   build:

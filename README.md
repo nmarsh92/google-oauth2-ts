@@ -29,8 +29,6 @@ To get started, just install, run and utilize the endpoints. Docs TBD
 ```
 NODE_ENV=<development|production>
 PORT= <port>
-MONGO_USER=<mongo user>
-MONGO_PASSWORD=<mongo password>
 DB=mongodb+srv://<username>:<password>@<url>/?retryWrites=true&w=majority
 GOOGLE_CLIENT_ID=<google_client_id>
 GOOGLE_CLIENT_SECRET=<google_client_secret>

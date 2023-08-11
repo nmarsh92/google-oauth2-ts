@@ -23,16 +23,6 @@ export class Environment {
   public readonly port: number = 80;
 
   /**
-   * Username used to connect to the MongoDB database.
-   */
-  public readonly mongoUser: string;
-
-  /**
-   * Password used to connect to the MongoDB database.
-   */
-  public readonly mongoPassword: string;
-
-  /**
    * Name of the MongoDB database to be used.
    */
   public readonly db: string;
@@ -75,8 +65,6 @@ export class Environment {
   private constructor() {
     this.isProduction = process.env.NODE_ENV === PRODUCTION;
     this.port = this.isProduction ? 80 : parseInt(process.env.PORT || "8080");
-    this.mongoUser = this.getOrThrow("MONGO_USER");
-    this.mongoPassword = this.getOrThrow("MONGO_PASSWORD");
     this.db = this.getOrThrow("DB");
     this.googleClientId = this.getOrThrow("GOOGLE_CLIENT_ID");
     this.googleSecret = this.getOrThrow("GOOGLE_CLIENT_SECRET");
