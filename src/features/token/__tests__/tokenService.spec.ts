@@ -1,5 +1,5 @@
 import { Environment } from "../../../shared/environment";
-import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken, invalidateRefreshToken, invalidateAllRefreshTokens } from "../tokenService";
+import { signAndGetAccessTokenAsync, validateAndGetAccessTokenPayloadAsync, validateAndGetRefreshTokenPayloadAsync, addAndGetRefreshTokenAsync, hashToken, revokeRefreshToken, revokeAllRefreshTokens } from "../tokenService";
 import * as userService from "../../users/userService";
 import * as userStore from "../../users/userStore";
 import * as tokenStore from "../tokenStore";
@@ -47,8 +47,8 @@ describe("Token Service", () => {
     jest.spyOn(userStore, "ensureExists").mockResolvedValue();
     jest.spyOn(tokenStore, "addRefreshToken").mockResolvedValue();
     jest.spyOn(tokenStore, "validateRefreshToken").mockResolvedValue();
-    jest.spyOn(tokenStore, "invalidateRefreshTokenStore").mockResolvedValue();
-    jest.spyOn(tokenStore, "invalidateAllRefreshTokensStore").mockResolvedValue();
+    jest.spyOn(tokenStore, "revokeRefreshTokenStore").mockResolvedValue();
+    jest.spyOn(tokenStore, "revokeAllRefreshTokensStore").mockResolvedValue();
   });
 
   test("signAndGetAccessTokenAsync returns a token", async () => {
@@ -140,15 +140,15 @@ describe("Token Service", () => {
     expect(bcrypt.compareSync(token2, hashedToken1)).toBe(false);
   });
 
-  test("invalidateRefreshToken to call tokenStore", async () => {
+  test("revokeRefreshToken to call tokenStore", async () => {
     const tokenKey = "test";
-    await invalidateRefreshToken(mockUser.id, tokenKey);
-    expect(tokenStore.invalidateRefreshTokenStore).toBeCalledWith(mockUser.id, tokenKey);
+    await revokeRefreshToken(mockUser.id, tokenKey);
+    expect(tokenStore.revokeRefreshTokenStore).toBeCalledWith(mockUser.id, tokenKey);
   });
 
-  test("invalidateAllRefreshTokens to call tokenStore", async () => {
+  test("revokeAllRefreshTokens to call tokenStore", async () => {
 
-    await invalidateAllRefreshTokens(mockUser.id);
-    expect(tokenStore.invalidateAllRefreshTokensStore).toBeCalledWith(mockUser.id);
+    await revokeAllRefreshTokens(mockUser.id);
+    expect(tokenStore.revokeAllRefreshTokensStore).toBeCalledWith(mockUser.id);
   });
 });

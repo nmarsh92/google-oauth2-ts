@@ -67,9 +67,9 @@ export const introspectRequestValidator = validate(checkSchema({
 }));
 
 /**
- * Invalidate request validator.
+ * Revoke request validator.
  */
-export const invalidateRequestValidator = validate(checkSchema({
+export const revokeRequestValidator = validate(checkSchema({
   "refresh_token": {
 
     in: ["body"],

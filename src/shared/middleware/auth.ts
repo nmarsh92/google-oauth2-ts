@@ -5,8 +5,13 @@ import { ArgumentNullError } from "../errors/argument-null-error";
 
 const error = new UnauthorizedError("Missing or invalid credential.");
 
-export const isAuthorized = async (req: Request, res: Response, next: NextFunction) => {
-
+/**
+ * Client credentials middleware.
+ * @param req 
+ * @param res 
+ * @param next 
+ */
+export const isAuthorizedBasic = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const auth = req.headers.authorization;
     if (!auth) throw error;
@@ -16,6 +21,23 @@ export const isAuthorized = async (req: Request, res: Response, next: NextFuncti
     next(error)
   }
 
+}
+
+/**
+ * Bearer token middleware.
+ * @param req 
+ * @param res 
+ * @param next 
+ */
+export const isAuthorizedBearer = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth) throw error;
+    if (!auth?.startsWith("Bearer") || !interpretBearerAuth(auth)) throw error;
+    next();
+  } catch (error) {
+    next(error)
+  }
 }
 
 /**
@@ -42,4 +64,23 @@ const interpretBasicAuth = (basicAuth?: string) => {
   if (!clientId || !secret) throw error;
 
   return Environment.getInstance().getSecret(clientId) === secret;
+}
+
+/**
+ * Interprets the bearer token.
+ * @param bearerAuth 
+ * @returns 
+ */
+const interpretBearerAuth = (bearerAuth?: string) => {
+  if (!bearerAuth) throw new ArgumentNullError("bearerAuth");
+
+  const credentials = bearerAuth.split(" ");
+  if (!credentials) throw error;
+  if (credentials.length != 2) throw error;
+  if (credentials[0] !== "Bearer") throw error;
+
+  const token = credentials[1];
+  if (!token) throw error;
+
+  return token;
 }

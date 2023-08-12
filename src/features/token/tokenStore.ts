@@ -28,13 +28,13 @@ export const addRefreshToken = async (userId: string, expiredAt: number, tokenHa
 }
 
 /**
- * Invalidates a specific refresh token for a user.
+ * Revokes a specific refresh token for a user.
  *
  * @param {string} userId - The ID of the user associated with the refresh token.
- * @param {string} tokenHash - The token key to be invalidated.
+ * @param {string} tokenHash - The token key to be revoked.
  * @throws {ArgumentNullError} - When `userId` or `tokenKey` is empty or not provided.
  */
-export const invalidateRefreshTokenStore = async (userId: string, tokenKey: string) => {
+export const revokeRefreshTokenStore = async (userId: string, tokenKey: string) => {
   if (!userId) throw new ArgumentNullError('id');
   if (!tokenKey) throw new ArgumentNullError('tokenId');
   const token = await getRefreshToken(userId, tokenKey);
@@ -43,12 +43,12 @@ export const invalidateRefreshTokenStore = async (userId: string, tokenKey: stri
 }
 
 /**
- * Invalidates all refresh tokens for a user.
- * @param {string} userId - The ID of the user for whom to invalidate all refresh tokens.
+ * Revokes all refresh tokens for a user.
+ * @param {string} userId - The ID of the user for whom to revoke all refresh tokens.
  * @throws {ArgumentNullError} - When `userId` is empty or not provided.
  * @throws {NotFoundError} - When the user is not found.
  */
-export const invalidateAllRefreshTokensStore = async (userId: string) => {
+export const revokeAllRefreshTokensStore = async (userId: string) => {
   if (!userId) throw new ArgumentNullError('id');
   const tokens = await RefreshTokenModel.find({ userId: userId });
   tokens.forEach(token => {

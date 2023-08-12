@@ -23,10 +23,9 @@ try {
   connect().then(_ => {
     logger.info("Database connected.");
     app.listen(port, () => {
-      logger.info(`⚡️[server]: Server is running at http://localhost:${port}`);
+      logger.info(`⚡️[server]: Server is running on port ${port}`);
     });
   })
-  app.use(checkCsrf);
   UseRoutes(app, authName, authRoutes);
   UseRoutes(app, tokenName, tokenRoutes);
   app.use(errorHandler);

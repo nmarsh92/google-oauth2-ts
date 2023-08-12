@@ -1,7 +1,7 @@
 /**
- * Invalidate request.
+ * Revoke request.
  */
-export interface InvalidateRequest {
+export interface RevokeRequest {
 
   /** 
    * Refresh token.

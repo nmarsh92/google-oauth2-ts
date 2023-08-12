@@ -1,7 +1,7 @@
 {
-  "name": "minimalist-oauth2-ts",
+  "name": "google-oauth2-ts",
   "version": "1.0.0",
-  "description": "A minimalist implementation of OAuth 2.",
+  "description": "A google login with self managed refresh token grant.",
   "main": "index.js",
   "scripts": {
     "test": "npx jest",
